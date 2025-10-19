@@ -1,5 +1,7 @@
 package ru.rabis.controllers;
 
+import static ru.rabis.utils.Utils.isValidUuid;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import ru.rabis.model.InputData;
 import ru.rabis.model.ResponseResult;
 import ru.rabis.openapi.schema.OpenApiSchemaProvider;
+import ru.rabis.services.DataProviderService;
 import ru.rabis.services.JsonComparatorService;
+import ru.rabis.services.JsonCompareConfiguration;
 
 @Controller
 @RequestMapping("/api/v1")
@@ -29,12 +33,12 @@ public class DataComparatorController {
   private final Logger log = LoggerFactory.getLogger(DataComparatorController.class);
 
   private final OpenApiSchemaProvider openApiSchemaProvider;
-  private final JsonComparatorService jsonComparatorService;
+  private final DataProviderService dataProviderService;
 
   public DataComparatorController(OpenApiSchemaProvider openApiSchemaProvider,
-      JsonComparatorService jsonComparatorService) {
+      DataProviderService dataProviderService) {
     this.openApiSchemaProvider = openApiSchemaProvider;
-    this.jsonComparatorService = jsonComparatorService;
+    this.dataProviderService = dataProviderService;
   }
 
   @ApiResponses(value = {
@@ -69,9 +73,21 @@ public class DataComparatorController {
         return ResponseEntity.noContent().build();
       }
 
-      var diffs = jsonComparatorService.compare(inputData, specNode, schemaNode);
+      String sourceContent = inputData.getSource();
+      if (isValidUuid(sourceContent)) {
+        sourceContent = dataProviderService.getDataObject(sourceContent, module, schemaName);
+      }
+      String targetContent = inputData.getTarget();
+      if (isValidUuid(targetContent)) {
+        targetContent = dataProviderService.getDataObject(targetContent, module, schemaName);
+      }
+
+      JsonComparatorService jsonComparatorService = new JsonComparatorService(
+          new JsonCompareConfiguration(inputData.getConfiguration())
+      );
+      var diffs = jsonComparatorService.compare(sourceContent, targetContent, specNode, schemaNode);
       var finishFormula = Instant.now();
-      log.info("|Сравнение данных| {} | {} |Time elapsed| {}", module, schemaName,
+      log.info("|Сравнение данных|{}|{}|Time elapsed| {}", module, schemaName,
           Duration.between(start, finishFormula).toMillis());
       ResponseResult result = new ResponseResult();
       result.setDiffs(diffs);
@@ -79,6 +95,7 @@ public class DataComparatorController {
       result.setMessage(
           diffs.isEmpty() ? "JSON-объекты идентичны по не-readonly полям." : "Есть различия"
       );
+      result.setConfiguration(inputData.getConfiguration());
       return ResponseEntity.ok(result);
     } catch (Exception exception) {
       log.error(exception.getMessage());

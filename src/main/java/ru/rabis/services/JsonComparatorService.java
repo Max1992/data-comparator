@@ -1,5 +1,7 @@
 package ru.rabis.services;
 
+import static ru.rabis.utils.Utils.isValidUuid;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,32 +12,31 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import org.springframework.stereotype.Service;
-import ru.rabis.model.InputData;
 
-@Service
 public class JsonComparatorService {
 
-  private static Set<String> fieldsToSkip = Set.of(
-      "stringSequence",
-      "stringSequenceSearch",
-      "titlePIR"
-  );
+  private final JsonCompareConfiguration configuration;
 
-  public List<String> compare(InputData inputData, JsonNode specNode, JsonNode schemaNode)
+  public JsonComparatorService(JsonCompareConfiguration configuration) {
+    this.configuration = configuration;
+  }
+
+  public List<String> compare(
+      final String source,
+      final String target,
+      JsonNode specNode,
+      JsonNode schemaNode)
       throws JsonProcessingException {
 
     ObjectMapper jsonMapper = new ObjectMapper();
-    final JsonNode json1 = jsonMapper.readTree(inputData.getSource());
-    final JsonNode json2 = jsonMapper.readTree(inputData.getTarget());
+    final JsonNode json1 = jsonMapper.readTree(source);
+    final JsonNode json2 = jsonMapper.readTree(target);
     List<String> diffs = compareJson(json1, json2, schemaNode, specNode, "");
 
     return diffs;
   }
 
-    private static List<String> compareJson(
+  private List<String> compareJson(
       JsonNode json1,
       JsonNode json2,
       JsonNode schemaNode,
@@ -50,11 +51,11 @@ public class JsonComparatorService {
       String fieldName = field.getKey();
       JsonNode fieldSchema = field.getValue();
 
-      if (isReadonlyOrDate(fieldSchema)) {
+      if (configuration.isReadonly(fieldSchema)) {
         continue;
       }
 
-      if (fieldsToSkip.contains(fieldName)) {
+      if (configuration.isIgnore(fieldName)) {
         continue;
       }
 
@@ -74,7 +75,7 @@ public class JsonComparatorService {
     return diffs;
   }
 
-  private static List<String> compareArrays(
+  private List<String> compareArrays(
       JsonNode array1,
       JsonNode array2,
       JsonNode itemSchema,
@@ -106,7 +107,7 @@ public class JsonComparatorService {
     return diffs;
   }
 
-  private static List<String> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
+  private List<String> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
     List<String> diffs = new ArrayList<>();
     String refSchemaName = fieldSchema.path("$ref").asText("");
     if (!refSchemaName.isEmpty()) {
@@ -121,7 +122,7 @@ public class JsonComparatorService {
     return diffs;
   }
 
-  private static List<String> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
+  private List<String> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
     List<String> diffs = new ArrayList<>();
     JsonNode itemsSchema = fieldSchema.path("items");
     if (itemsSchema != null && itemsSchema.path("$ref") != null) {
@@ -135,11 +136,15 @@ public class JsonComparatorService {
     return diffs;
   }
 
-  private static List<String> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
+  private List<String> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
     List<String> diffs = new ArrayList<>();
     // Простое поле или массив не объектов
 
-    if (isValidUuid(value1) || isValidUuid(value2)) {
+    if (configuration.isUuid(value1) || configuration.isUuid(value2)) {
+      return diffs;
+    }
+
+    if (configuration.isDate(fieldSchema)) {
       return diffs;
     }
 
@@ -152,26 +157,11 @@ public class JsonComparatorService {
     return diffs;
   }
 
-  private static boolean isArrayOfObjects(JsonNode fieldSchema) {
+  private boolean isArrayOfObjects(JsonNode fieldSchema) {
     return fieldSchema.path("type").asText("").equals("array");
   }
 
-  private static boolean isReadonlyOrDate(JsonNode fieldSchema) {
-    boolean isReadonly = fieldSchema.path("readOnly").asBoolean(false);
-    boolean isDate = fieldSchema.path("format").asText("").equals("date");
-    return isReadonly || isDate;
-  }
-
-  public static boolean isValidUuid(JsonNode text) {
-    try {
-      UUID.fromString(text.asText());
-      return true;
-    } catch (IllegalArgumentException e) {
-      return false;
-    }
-  }
-
-  public static JsonNode sortArrayByField(JsonNode array, String fieldName) {
+  public JsonNode sortArrayByField(JsonNode array, String fieldName) {
     List<JsonNode> nodes = new ArrayList<>();
     array.forEach(nodes::add);
 

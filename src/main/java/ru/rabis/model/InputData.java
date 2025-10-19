@@ -3,6 +3,15 @@ package ru.rabis.model;
 public class InputData {
   private String source;
   private String target;
+  private CompareConfiguration configuration = new CompareConfiguration();
+
+  public CompareConfiguration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(CompareConfiguration configuration) {
+    this.configuration = configuration;
+  }
 
   public String getTarget() {
     return target;
