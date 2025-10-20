@@ -1,6 +1,6 @@
 package ru.rabis.model;
 
-public class InputData {
+public class CompareData {
   private String source;
   private String target;
   private CompareConfiguration configuration = new CompareConfiguration();

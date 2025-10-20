@@ -5,11 +5,11 @@ import static ru.rabis.utils.Utils.isValidUuid;
 import com.fasterxml.jackson.databind.JsonNode;
 import ru.rabis.model.CompareConfiguration;
 
-public class JsonCompareConfiguration {
+public class CompareConfigurationService {
 
   private final CompareConfiguration configuration;
 
-  public JsonCompareConfiguration(CompareConfiguration configuration) {
+  public CompareConfigurationService(CompareConfiguration configuration) {
     this.configuration = configuration;
   }
 

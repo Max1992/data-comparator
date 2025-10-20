@@ -1,7 +1,5 @@
 package ru.rabis.services;
 
-import static ru.rabis.utils.Utils.isValidUuid;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,11 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class JsonComparatorService {
+public class ComparatorService {
 
-  private final JsonCompareConfiguration configuration;
+  private final CompareConfigurationService configuration;
 
-  public JsonComparatorService(JsonCompareConfiguration configuration) {
+  public ComparatorService(CompareConfigurationService configuration) {
     this.configuration = configuration;
   }
 

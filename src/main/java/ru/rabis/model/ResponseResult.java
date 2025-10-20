@@ -7,15 +7,6 @@ public class ResponseResult {
   private int count;
   private String message;
   private List<String> diffs;
-  private CompareConfiguration configuration;
-
-  public CompareConfiguration getConfiguration() {
-    return configuration;
-  }
-
-  public void setConfiguration(CompareConfiguration configuration) {
-    this.configuration = configuration;
-  }
 
   public int getCount() {
     return count;
