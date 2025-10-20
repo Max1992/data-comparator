@@ -6,6 +6,7 @@ import java.util.Set;
 public class CompareConfiguration {
 
   private Set<String> ignore = new HashSet<>();
+  private Set<String> arrayKey = new HashSet<>();
   private boolean readonly = false;
   private boolean date = false;
   private boolean uuid = false;
@@ -40,5 +41,13 @@ public class CompareConfiguration {
 
   public void setIgnore(Set<String> ignore) {
     this.ignore = ignore;
+  }
+
+  public Set<String> getArrayKey() {
+    return arrayKey;
+  }
+
+  public void setArrayKey(Set<String> arrayKey) {
+    this.arrayKey = arrayKey;
   }
 }

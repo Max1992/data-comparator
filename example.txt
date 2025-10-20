@@ -2,9 +2,10 @@
   "source" : "a8c96a00-f6a2-440f-9969-c9d8ab40b643",
   "target" : "0787ed00-1f15-469f-8b28-b087e320776f",
   "configuration":{
-    "ignore": ["stringSequenceSearch","stringSequence","titlePIR"],
+    "ignore": ["stringSequenceSearch","stringSequence","titlePIR","sequence"],
     "readonly": false,
     "date": false,
-    "uuid": false
+    "uuid": false,
+    "arrayKey": ["_name", "stageUidForKp"]
   }
 }

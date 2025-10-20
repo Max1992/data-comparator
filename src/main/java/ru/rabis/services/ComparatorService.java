@@ -3,13 +3,12 @@ package ru.rabis.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import ru.rabis.model.EntryKeyComposite;
 
 public class ComparatorService {
 
@@ -91,31 +90,35 @@ public class ComparatorService {
       return diffs;
     }
 
-//    if (size1 > 1) {
-//      array1 = sortArrayByField(array1, "_name");
-//      array2 = sortArrayByField(array2, "_name");
-//    }
-
     for (int i = 0; i < size1; i++) {
       JsonNode item1 = array1.get(i);
-      String name = item1.path("_name").asText();
-      JsonNode item2 = null;
+
+      EntryKeyComposite composite = configuration.getKeyComposite(item1);
+
+      List<JsonNode> nodes = new ArrayList<>();
       Iterator<JsonNode> elements = array2.elements();
       while (elements.hasNext()) {
         JsonNode next = elements.next();
-        if (next.path("_name").asText().equals(name)) {
-          item2 = next;
-          break;
+        EntryKeyComposite current = configuration.getKeyComposite(next);
+
+        if (composite.equals(current)) {
+          nodes.add(next);
         }
       }
-      if (item2 == null) {
-        diffs.add("Не найдено значение " + name);
+      if (nodes.isEmpty()) {
+        diffs.add("Не найдено значение " + composite);
+        continue;
+      }
+      if (nodes.size() != 1) {
+        diffs.add("Найдено более одного значение " + composite);
         continue;
       }
 
-      //JsonNode item2 = array2.get(i);
       String itemPath = path + "[" + i + "]";
-      diffs.addAll(compareJson(item1, item2, itemSchema, specNode, itemPath));
+      if (size1 > 1) {
+        itemPath = path + "[" + composite + "]";
+      }
+      diffs.addAll(compareJson(item1, nodes.get(0), itemSchema, specNode, itemPath));
     }
     return diffs;
   }
@@ -172,23 +175,5 @@ public class ComparatorService {
 
   private boolean isArrayOfObjects(JsonNode fieldSchema) {
     return fieldSchema.path("type").asText("").equals("array");
-  }
-
-  public JsonNode sortArrayByField(JsonNode array, String fieldName) {
-    List<JsonNode> nodes = new ArrayList<>();
-    array.forEach(nodes::add);
-
-    // Сортируем по значению поля fieldName
-    Collections.sort(nodes, (a, b) -> {
-      String valueA = a.path(fieldName).asText();
-      String valueB = b.path(fieldName).asText();
-      return valueA.compareTo(valueB);
-    });
-
-    // Создаем новый ArrayNode и заполняем его отсортированными элементами
-    ArrayNode sortedArray = new ObjectMapper().createArrayNode();
-    nodes.forEach(sortedArray::add);
-
-    return sortedArray;
   }
 }
