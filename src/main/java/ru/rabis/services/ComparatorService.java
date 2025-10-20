@@ -91,14 +91,29 @@ public class ComparatorService {
       return diffs;
     }
 
-    if (size1 > 1) {
-      array1 = sortArrayByField(array1, "_name");
-      array2 = sortArrayByField(array2, "_name");
-    }
+//    if (size1 > 1) {
+//      array1 = sortArrayByField(array1, "_name");
+//      array2 = sortArrayByField(array2, "_name");
+//    }
 
     for (int i = 0; i < size1; i++) {
       JsonNode item1 = array1.get(i);
-      JsonNode item2 = array2.get(i);
+      String name = item1.path("_name").asText();
+      JsonNode item2 = null;
+      Iterator<JsonNode> elements = array2.elements();
+      while (elements.hasNext()) {
+        JsonNode next = elements.next();
+        if (next.path("_name").asText().equals(name)) {
+          item2 = next;
+          break;
+        }
+      }
+      if (item2 == null) {
+        diffs.add("Не найдено значение " + name);
+        continue;
+      }
+
+      //JsonNode item2 = array2.get(i);
       String itemPath = path + "[" + i + "]";
       diffs.addAll(compareJson(item1, item2, itemSchema, specNode, itemPath));
     }
