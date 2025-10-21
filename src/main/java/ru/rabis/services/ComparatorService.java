@@ -107,11 +107,17 @@ public class ComparatorService {
         }
       }
       if (nodes.isEmpty()) {
-        diffs.add(CompareEntry.error("Не найдено значение '" + composite + "' " + path));
+        diffs.add(CompareEntry.error(
+            String.format("Не найдено значение '%s' '%s'",
+                composite, path))
+        );
         continue;
       }
       if (nodes.size() != 1) {
-        diffs.add(CompareEntry.warning("Найдено более одного значение '" + composite + "' :" + path));
+        diffs.add(CompareEntry.warning(
+            String.format("Найдено более одного значение '%s' (%d) '%s'",
+                composite, nodes.size(), path))
+        );
         continue;
       }
 

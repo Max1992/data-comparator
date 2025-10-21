@@ -22,13 +22,16 @@ public class ResponseResult {
   public List<String> getErrors() {
     return diffs.stream()
         .filter(x -> x.level().equals(CompareLevels.ERROR))
-        .map(CompareEntry::message).toList();
+        .map(CompareEntry::message)
+        .sorted()
+        .toList();
   }
 
   public List<String> getWarnings() {
     return diffs.stream()
         .filter(x -> x.level().equals(CompareLevels.WARNING))
         .map(CompareEntry::message)
+        .sorted()
         .toList();
   }
 
