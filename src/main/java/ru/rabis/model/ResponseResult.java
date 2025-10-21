@@ -4,16 +4,11 @@ import java.util.List;
 
 public class ResponseResult {
 
-  private int count;
   private String message;
-  private List<String> diffs;
+  private List<CompareEntry> diffs;
 
   public int getCount() {
-    return count;
-  }
-
-  public void setCount(int count) {
-    this.count = count;
+    return diffs.size();
   }
 
   public String getMessage() {
@@ -24,11 +19,20 @@ public class ResponseResult {
     this.message = message;
   }
 
-  public List<String> getDiffs() {
-    return diffs;
+  public List<String> getErrors() {
+    return diffs.stream()
+        .filter(x -> x.level().equals(CompareLevels.ERROR))
+        .map(CompareEntry::message).toList();
   }
 
-  public void setDiffs(List<String> diffs) {
+  public List<String> getWarnings() {
+    return diffs.stream()
+        .filter(x -> x.level().equals(CompareLevels.WARNING))
+        .map(CompareEntry::message)
+        .toList();
+  }
+
+  public void setDiffs(List<CompareEntry> diffs) {
     this.diffs = diffs;
   }
 }

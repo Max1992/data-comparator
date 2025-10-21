@@ -1,8 +1,10 @@
 package ru.rabis.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class EntryKeyComposite implements EntryKey {
   private List<EntryKey> composite = new ArrayList<>();
@@ -28,13 +30,8 @@ public class EntryKeyComposite implements EntryKey {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    composite.forEach(a -> {
-      if (sb.length() > 1) {
-        sb.append("|");
-      }
-      sb.append(a.toString());
-    });
-    return sb.toString();
+    return composite.stream()
+        .map(Objects::toString)
+        .collect(Collectors.joining("|"));
   }
 }

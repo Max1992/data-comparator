@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import ru.rabis.model.CompareEntry;
 import ru.rabis.model.EntryKeyComposite;
 
 public class ComparatorService {
@@ -18,7 +19,7 @@ public class ComparatorService {
     this.configuration = configuration;
   }
 
-  public List<String> compare(
+  public List<CompareEntry> compare(
       final String source,
       final String target,
       JsonNode specNode,
@@ -28,19 +29,19 @@ public class ComparatorService {
     ObjectMapper jsonMapper = new ObjectMapper();
     final JsonNode json1 = jsonMapper.readTree(source);
     final JsonNode json2 = jsonMapper.readTree(target);
-    List<String> diffs = compareJson(json1, json2, schemaNode, specNode, "");
+    List<CompareEntry> diffs = compareJson(json1, json2, schemaNode, specNode, "");
 
     return diffs;
   }
 
-  private List<String> compareJson(
+  private List<CompareEntry> compareJson(
       JsonNode json1,
       JsonNode json2,
       JsonNode schemaNode,
       JsonNode specNode,
       String path
   ) {
-    List<String> diffs = new ArrayList<>();
+    List<CompareEntry> diffs = new ArrayList<>();
     JsonNode properties = schemaNode.path("properties");
     Iterator<Entry<String, JsonNode>> fields = properties.fields();
     while (fields.hasNext()) {
@@ -72,21 +73,21 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<String> compareArrays(
+  private List<CompareEntry> compareArrays(
       JsonNode array1,
       JsonNode array2,
       JsonNode itemSchema,
       JsonNode specNode,
       String path
   ) {
-    List<String> diffs = new ArrayList<>();
+    List<CompareEntry> diffs = new ArrayList<>();
     int size1 = array1.size();
     int size2 = array2.size();
     if (size1 != size2) {
-      diffs.add(String.format(
+      diffs.add(CompareEntry.error(String.format(
           "Массив '%s': разное количество элементов (%d и %d)",
           path, size1, size2
-      ));
+      )));
       return diffs;
     }
 
@@ -106,11 +107,11 @@ public class ComparatorService {
         }
       }
       if (nodes.isEmpty()) {
-        diffs.add("Не найдено значение " + composite);
+        diffs.add(CompareEntry.error("Не найдено значение '" + composite + "' " + path));
         continue;
       }
       if (nodes.size() != 1) {
-        diffs.add("Найдено более одного значение " + composite);
+        diffs.add(CompareEntry.warning("Найдено более одного значение '" + composite + "' :" + path));
         continue;
       }
 
@@ -123,8 +124,8 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<String> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
-    List<String> diffs = new ArrayList<>();
+  private List<CompareEntry> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
+    List<CompareEntry> diffs = new ArrayList<>();
     String refSchemaName = fieldSchema.path("$ref").asText("");
     if (!refSchemaName.isEmpty()) {
       String nestedSchemaName = refSchemaName.split("/")[refSchemaName.split("/").length - 1];
@@ -138,8 +139,8 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<String> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
-    List<String> diffs = new ArrayList<>();
+  private List<CompareEntry> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
+    List<CompareEntry> diffs = new ArrayList<>();
     JsonNode itemsSchema = fieldSchema.path("items");
     if (itemsSchema != null && itemsSchema.path("$ref") != null) {
       String refSchemaName = itemsSchema.path("$ref").asText("");
@@ -152,8 +153,8 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<String> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
-    List<String> diffs = new ArrayList<>();
+  private List<CompareEntry> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
+    List<CompareEntry> diffs = new ArrayList<>();
     // Простое поле или массив не объектов
 
     if (configuration.isUuid(value1) || configuration.isUuid(value2)) {
@@ -165,10 +166,10 @@ public class ComparatorService {
     }
 
     if (!value1.equals(value2)) {
-      diffs.add(String.format(
+      diffs.add(CompareEntry.error(String.format(
           "Поле '%s': в первом JSON '%s', во втором '%s'",
           path, value1, value2
-      ));
+      )));
     }
     return diffs;
   }

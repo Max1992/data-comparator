@@ -85,9 +85,8 @@ public class DataComparatorController {
           Duration.between(start, finishFormula).toMillis());
       ResponseResult result = new ResponseResult();
       result.setDiffs(diffs);
-      result.setCount(diffs.size());
       result.setMessage(
-          diffs.isEmpty() ? "JSON-объекты идентичны по не-readonly полям." : "Есть различия"
+          diffs.isEmpty() ? "JSON-объекты идентичны" : "Есть различия"
       );
       return ResponseEntity.ok(result);
     } catch (Exception exception) {
