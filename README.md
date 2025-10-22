@@ -87,6 +87,23 @@ curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator/fi
 --form 'target=@"000014.json"'
 ```
 
+Можно указать для проверки любой тип, например
+
+```json
+curl --location 'http://localhost:8096/api/v1/Calculator/kiiIgfi/file' \
+--form 'configuration="{
+  \"ignore\": [\"stringSequenceSearch\",\"stringSequence\",\"titlePIR\",\"sequence\", \"typePir\"],
+  \"readonly\": false,
+  \"date\": false,
+  \"uuid\": false,
+  \"arrayKey\": [\"_name\", \"objectUuid\"]
+}";type=application/json' \
+--form 'source=@"kiiIgfi-source.json"' \
+--form 'target=@"kiiIgfi-target.json"'
+```
+
+Тут для проверки указывается тип "kiiIgfi", файлы должны содержать данные соответствующие указанному типу
+
 ## Используемые технологии
 * Spring Boot https://spring.io/projects/spring-boot
 * Spring Security https://spring.io/projects/spring-security
