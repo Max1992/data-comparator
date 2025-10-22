@@ -3,10 +3,9 @@ package ru.rabis.services;
 import static ru.rabis.utils.Utils.isValidUuid;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.Set;
 import ru.rabis.model.CompareConfiguration;
 import ru.rabis.model.EntryKeyComposite;
-import ru.rabis.model.EntryKeyDefault;
+import ru.rabis.model.EntryKeyValue;
 
 public class CompareConfigurationService {
 
@@ -37,7 +36,7 @@ public class CompareConfigurationService {
     configuration.getArrayKey().forEach(key -> {
       JsonNode value = node.path(key);
       if (!value.isMissingNode()) {
-        composite.add(new EntryKeyDefault(value));
+        composite.add(new EntryKeyValue(value));
       }
     });
     return composite;

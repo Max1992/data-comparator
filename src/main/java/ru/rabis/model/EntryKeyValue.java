@@ -3,10 +3,10 @@ package ru.rabis.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 
-public class EntryKeyDefault implements EntryKey {
+public class EntryKeyValue implements EntryKey {
   private final JsonNode value;
 
-  public EntryKeyDefault(final JsonNode value) {
+  public EntryKeyValue(final JsonNode value) {
     this.value = value;
   }
 
@@ -18,7 +18,7 @@ public class EntryKeyDefault implements EntryKey {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    EntryKeyDefault that = (EntryKeyDefault) o;
+    EntryKeyValue that = (EntryKeyValue) o;
     return Objects.equals(value, that.value);
   }
 

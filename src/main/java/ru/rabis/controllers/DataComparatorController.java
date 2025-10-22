@@ -71,8 +71,8 @@ public class DataComparatorController {
       @PathVariable("module") String module,
       @PathVariable("schemaName") String schemaName,
       @RequestPart(name = "configuration") CompareConfiguration configuration,
-      @RequestPart(name = "source", required = true) MultipartFile source,
-      @RequestPart(name = "target", required = true) MultipartFile target) {
+      @RequestPart(name = "source") MultipartFile sourceFile,
+      @RequestPart(name = "target") MultipartFile targetFile) {
     try {
       var start = Instant.now();
 
@@ -83,16 +83,16 @@ public class DataComparatorController {
         return ResponseEntity.noContent().build();
       }
 
-      String sourceContent = getDataObject(getFileContent(source), module, schemaName);
-      String targetContent = getDataObject(getFileContent(target), module, schemaName);
+      String source = getDataObject(getFileContent(sourceFile), module, schemaName);
+      String target = getDataObject(getFileContent(targetFile), module, schemaName);
 
       ComparatorService comparatorService = new ComparatorService(
           new CompareConfigurationService(configuration)
       );
-      var diffs = comparatorService.compare(sourceContent, targetContent, specNode, schemaNode);
-      var finishFormula = Instant.now();
+      var diffs = comparatorService.compare(source, target, specNode, schemaNode);
+      var finish = Instant.now();
       log.info("|Сравнение данных| {} | {} |Time elapsed| {}", module, schemaName,
-          Duration.between(start, finishFormula).toMillis());
+          Duration.between(start, finish).toMillis());
       return ResponseEntity.ok(getResult(diffs));
     } catch (Exception exception) {
       log.error(exception.getMessage());
@@ -142,9 +142,9 @@ public class DataComparatorController {
           new CompareConfigurationService(compareData.getConfiguration())
       );
       var diffs = comparatorService.compare(source, target, specNode, schemaNode);
-      var finishFormula = Instant.now();
+      var finish = Instant.now();
       log.info("|Сравнение данных| {} | {} |Time elapsed| {}", module, schemaName,
-          Duration.between(start, finishFormula).toMillis());
+          Duration.between(start, finish).toMillis());
       return ResponseEntity.ok(getResult(diffs));
     } catch (Exception exception) {
       log.error(exception.getMessage());
