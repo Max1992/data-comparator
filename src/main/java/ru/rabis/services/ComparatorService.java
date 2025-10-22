@@ -93,39 +93,38 @@ public class ComparatorService {
 
     for (int i = 0; i < size1; i++) {
       JsonNode item1 = array1.get(i);
+      EntryKeyComposite item1Key = configuration.getKeyComposite(item1);
 
-      EntryKeyComposite composite = configuration.getKeyComposite(item1);
-
-      List<JsonNode> nodes = new ArrayList<>();
+      List<JsonNode> foundNodes = new ArrayList<>();
       Iterator<JsonNode> elements = array2.elements();
       while (elements.hasNext()) {
         JsonNode next = elements.next();
-        EntryKeyComposite current = configuration.getKeyComposite(next);
+        EntryKeyComposite item2Key = configuration.getKeyComposite(next);
 
-        if (composite.equals(current)) {
-          nodes.add(next);
+        if (item1Key.equals(item2Key)) {
+          foundNodes.add(next);
         }
       }
-      if (nodes.isEmpty()) {
+      if (foundNodes.isEmpty()) {
         diffs.add(CompareEntry.error(
             String.format("Не найдено значение '%s' '%s'",
-                composite, path))
+                item1Key, path))
         );
         continue;
       }
-      if (nodes.size() != 1) {
+      if (foundNodes.size() != 1) {
         diffs.add(CompareEntry.warning(
             String.format("Найдено более одного значение '%s' (%d) '%s'",
-                composite, nodes.size(), path))
+                item1Key, foundNodes.size(), path))
         );
         continue;
       }
 
       String itemPath = path + "[" + i + "]";
       if (size1 > 1) {
-        itemPath = path + "[" + composite + "]";
+        itemPath = path + "[" + item1Key + "]";
       }
-      diffs.addAll(compareJson(item1, nodes.get(0), itemSchema, specNode, itemPath));
+      diffs.addAll(compareJson(item1, foundNodes.get(0), itemSchema, specNode, itemPath));
     }
     return diffs;
   }

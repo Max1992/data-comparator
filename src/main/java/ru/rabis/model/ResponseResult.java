@@ -1,11 +1,12 @@
 package ru.rabis.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ResponseResult {
 
   private String message;
-  private List<CompareEntry> diffs;
+  private List<CompareEntry> diffs = new ArrayList<>();
 
   public int getCount() {
     return diffs.size();

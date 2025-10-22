@@ -1,5 +1,6 @@
 package ru.rabis.controllers;
 
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 import static ru.rabis.utils.Utils.isValidUuid;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -9,8 +10,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,7 +25,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
+import ru.rabis.model.CompareConfiguration;
 import ru.rabis.model.CompareData;
+import ru.rabis.model.CompareEntry;
 import ru.rabis.model.ResponseResult;
 import ru.rabis.openapi.schema.OpenApiSchemaProvider;
 import ru.rabis.services.DataProviderService;
@@ -55,10 +64,63 @@ public class DataComparatorController {
   })
   @RequestMapping(
       method = RequestMethod.POST,
+      value = "/{module}/{schemaName}/file",
+      produces = { "application/json;charset=UTF-8" },
+      consumes = { "application/json;charset=UTF-8", MULTIPART_FORM_DATA_VALUE })
+  ResponseEntity<ResponseResult> compareDataByFile(
+      @PathVariable("module") String module,
+      @PathVariable("schemaName") String schemaName,
+      @RequestPart(name = "configuration") CompareConfiguration configuration,
+      @RequestPart(name = "source", required = true) MultipartFile source,
+      @RequestPart(name = "target", required = true) MultipartFile target) {
+    try {
+      var start = Instant.now();
+
+      JsonNode specNode = openApiSchemaProvider.getSchemaByModuleName(module);
+      JsonNode schemaNode = specNode.path("components").path("schemas").path(schemaName);
+      if (schemaNode.isMissingNode()) {
+        log.info("Схема '{}' не найдена!", schemaName);
+        return ResponseEntity.noContent().build();
+      }
+
+      String sourceContent = getDataObject(getFileContent(source), module, schemaName);
+      String targetContent = getDataObject(getFileContent(target), module, schemaName);
+
+      ComparatorService comparatorService = new ComparatorService(
+          new CompareConfigurationService(configuration)
+      );
+      var diffs = comparatorService.compare(sourceContent, targetContent, specNode, schemaNode);
+      var finishFormula = Instant.now();
+      log.info("|Сравнение данных| {} | {} |Time elapsed| {}", module, schemaName,
+          Duration.between(start, finishFormula).toMillis());
+      return ResponseEntity.ok(getResult(diffs));
+    } catch (Exception exception) {
+      log.error(exception.getMessage());
+      ResponseResult result = new ResponseResult();
+      result.setMessage(exception.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(result);
+    }
+  }
+
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200",
+          description = "Ok",
+          content = { @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = ResponseResult.class)) }),
+      @ApiResponse(responseCode = "400",
+          description = "Bad Request",
+          content = { @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = ResponseResult.class)) })
+  })
+  @RequestMapping(
+      method = RequestMethod.POST,
       value = "/{module}/{schemaName}",
       produces = { "application/json;charset=UTF-8" },
       consumes = { "application/json;charset=UTF-8" })
-  ResponseEntity<ResponseResult> createDataObject(
+  ResponseEntity<ResponseResult> compareDataByJson(
       @PathVariable("module") String module,
       @PathVariable("schemaName") String schemaName,
       @RequestBody String objectsToCompare) {
@@ -83,12 +145,7 @@ public class DataComparatorController {
       var finishFormula = Instant.now();
       log.info("|Сравнение данных| {} | {} |Time elapsed| {}", module, schemaName,
           Duration.between(start, finishFormula).toMillis());
-      ResponseResult result = new ResponseResult();
-      result.setDiffs(diffs);
-      result.setMessage(
-          diffs.isEmpty() ? "JSON-объекты идентичны" : "Есть различия"
-      );
-      return ResponseEntity.ok(result);
+      return ResponseEntity.ok(getResult(diffs));
     } catch (Exception exception) {
       log.error(exception.getMessage());
       ResponseResult result = new ResponseResult();
@@ -104,5 +161,20 @@ public class DataComparatorController {
       return dataProviderService.getDataObject(input, module, schemaName);
     }
     return input;
+  }
+
+  private String getFileContent(MultipartFile multipartFile) throws IOException {
+    try (InputStream fileInputStream = multipartFile.getInputStream()) {
+      return new String(fileInputStream.readAllBytes(), StandardCharsets.UTF_8);
+    }
+  }
+
+  private ResponseResult getResult(List<CompareEntry> diffs) {
+    ResponseResult result = new ResponseResult();
+    result.setDiffs(diffs);
+    result.setMessage(
+        diffs.isEmpty() ? "JSON-объекты идентичны" : "Есть различия"
+    );
+    return result;
   }
 }
