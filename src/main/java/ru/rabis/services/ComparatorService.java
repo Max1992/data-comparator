@@ -3,17 +3,23 @@ package ru.rabis.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import ru.rabis.model.CompareEntry;
+import ru.rabis.model.EntryKey;
 import ru.rabis.model.EntryKeyComposite;
 
 public class ComparatorService {
 
   private final CompareConfigurationService configuration;
+  ObjectMapper mapper = new ObjectMapper();
+  private Map<EntryKey, ArrayNode> groupedMap1;
 
   public ComparatorService(CompareConfigurationService configuration) {
     this.configuration = configuration;
@@ -26,9 +32,8 @@ public class ComparatorService {
       JsonNode schemaNode)
       throws JsonProcessingException {
 
-    ObjectMapper jsonMapper = new ObjectMapper();
-    final JsonNode json1 = jsonMapper.readTree(source);
-    final JsonNode json2 = jsonMapper.readTree(target);
+    final JsonNode json1 = mapper.readTree(source);
+    final JsonNode json2 = mapper.readTree(target);
     List<CompareEntry> diffs = compareJson(json1, json2, schemaNode, specNode, "");
 
     return diffs;
@@ -91,42 +96,47 @@ public class ComparatorService {
       return diffs;
     }
 
-    for (int i = 0; i < size1; i++) {
-      JsonNode item1 = array1.get(i);
-      EntryKeyComposite item1Key = configuration.getKeyComposite(item1);
+    Map<EntryKey, List<JsonNode>> groupedMap1 = grouping(array1);
+    Map<EntryKey, List<JsonNode>> groupedMap2 = grouping(array2);
 
-      List<JsonNode> foundNodes = new ArrayList<>();
-      Iterator<JsonNode> elements = array2.elements();
-      while (elements.hasNext()) {
-        JsonNode next = elements.next();
-        EntryKeyComposite item2Key = configuration.getKeyComposite(next);
-
-        if (item1Key.equals(item2Key)) {
-          foundNodes.add(next);
-        }
-      }
-      if (foundNodes.isEmpty()) {
+    for (EntryKey item1Key : groupedMap1.keySet()) {
+      if (!groupedMap2.containsKey(item1Key)) {
         diffs.add(CompareEntry.error(
             String.format("Не найдено значение '%s' '%s'",
                 item1Key, path))
         );
         continue;
       }
-      if (foundNodes.size() != 1) {
+
+      List<JsonNode> item1 = groupedMap1.get(item1Key);
+      List<JsonNode> item2 = groupedMap2.get(item1Key);
+
+      int size = item1.size();
+      if (size != 1) {
         diffs.add(CompareEntry.warning(
             String.format("Найдено более одного значение '%s' (%d) '%s'",
-                item1Key, foundNodes.size(), path))
+                item1Key, size, path))
         );
+
         continue;
       }
 
-      String itemPath = path + "[" + i + "]";
+      String itemPath = path + "[0]";
       if (size1 > 1) {
         itemPath = path + "[" + item1Key + "]";
       }
-      diffs.addAll(compareJson(item1, foundNodes.get(0), itemSchema, specNode, itemPath));
+      diffs.addAll(compareJson(item1.get(0), item2.get(0), itemSchema, specNode, itemPath));
     }
     return diffs;
+  }
+
+  private Map<EntryKey, List<JsonNode>> grouping(JsonNode array) {
+    Map<EntryKey, List<JsonNode>> groupedMap = new HashMap<>();
+    for (JsonNode node : array) {
+      var key = configuration.getKeyComposite(node);
+      groupedMap.computeIfAbsent(key, k -> new ArrayList<>()).add(node);
+    }
+    return groupedMap;
   }
 
   private List<CompareEntry> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
