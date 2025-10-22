@@ -24,7 +24,7 @@ public class DataProviderService {
         HttpMethod.GET, new HttpEntity<>(""),
         String.class);
     if (response.getStatusCode() != HttpStatus.OK) {
-      throw new Exception("Не удалось получить новую схему данных.");
+      throw new Exception(String.format("Не удалось получить данные '%s|%s|%s' ", id, module, schemaName));
     }
     return response.getBody();
   }
