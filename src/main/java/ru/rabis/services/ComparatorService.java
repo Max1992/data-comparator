@@ -117,6 +117,8 @@ public class ComparatorService {
             String.format("Найдено более одного значение '%s' (%d) '%s'",
                 item1Key, size, path))
         );
+
+        continue;
       }
 
       String itemPath = path + "[0]";
