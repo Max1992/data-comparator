@@ -1,5 +1,7 @@
 package ru.rabis.services;
 
+import static ru.rabis.utils.Utils.getTypeFormat;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +16,7 @@ import java.util.Set;
 import ru.rabis.model.CompareEntry;
 import ru.rabis.model.EntryKey;
 import ru.rabis.model.EntryKeyComposite;
+import ru.rabis.model.TypeFormat;
 
 public class ComparatorService {
 
@@ -172,11 +175,8 @@ public class ComparatorService {
     List<CompareEntry> diffs = new ArrayList<>();
     // Простое поле или массив не объектов
 
-    if (configuration.isUuid(value1) || configuration.isUuid(value2)) {
-      return diffs;
-    }
-
-    if (configuration.isDate(fieldSchema)) {
+    final TypeFormat format = getTypeFormat(value1, fieldSchema);
+    if (!configuration.isFormat(format)) {
       return diffs;
     }
 

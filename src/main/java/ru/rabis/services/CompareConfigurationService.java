@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ru.rabis.model.CompareConfiguration;
 import ru.rabis.model.EntryKeyComposite;
 import ru.rabis.model.EntryKeyValue;
+import ru.rabis.model.TypeFormat;
 
 public class CompareConfigurationService {
 
@@ -23,14 +24,6 @@ public class CompareConfigurationService {
     return !configuration.getReadonly() && fieldSchema.path("readOnly").asBoolean(false);
   }
 
-  public boolean isDate(JsonNode fieldSchema) {
-    return !configuration.getDate() && fieldSchema.path("format").asText("").equals("date");
-  }
-
-  public boolean isUuid(JsonNode value) {
-    return !configuration.getUuid() && isValidUuid(value.asText());
-  }
-
   public EntryKeyComposite getKeyComposite(JsonNode node) {
     EntryKeyComposite composite = new EntryKeyComposite();
     configuration.getArrayKey().forEach(key -> {
@@ -40,5 +33,13 @@ public class CompareConfigurationService {
       }
     });
     return composite;
+  }
+
+  public boolean isFormat(TypeFormat format) {
+    return switch (format) {
+      case DATE -> configuration.getDate();
+      case UUID -> configuration.getUuid();
+      default -> true;
+    };
   }
 }
