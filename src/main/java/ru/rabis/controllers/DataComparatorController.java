@@ -37,7 +37,7 @@ import ru.rabis.services.ComparatorService;
 import ru.rabis.services.CompareConfigurationService;
 
 @Controller
-@RequestMapping("/api/v1")
+@RequestMapping("${route_url}/api/v1")
 public class DataComparatorController {
   private final Logger log = LoggerFactory.getLogger(DataComparatorController.class);
 
