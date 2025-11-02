@@ -7,15 +7,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import ru.rabis.model.CompareEntry;
 import ru.rabis.model.EntryKey;
-import ru.rabis.model.EntryKeyComposite;
 import ru.rabis.model.TypeFormat;
 
 public class ComparatorService {
@@ -70,7 +69,9 @@ public class ComparatorService {
       JsonNode value1 = json1.path(fieldName);
       JsonNode value2 = json2.path(fieldName);
 
-      if (value1.isObject() /*&& fieldSchema.path("type").asText("").equals("object")*/) {
+      if (!value1.isMissingNode() && value2.isMissingNode()) {
+        diffs.addAll(handleMissing(value1, value2, fieldSchema, specNode, currentPath));
+      } else if (value1.isObject() /*&& fieldSchema.path("type").asText("").equals("object")*/) {
         diffs.addAll(handleObject(value1, value2, fieldSchema, specNode, currentPath));
       } else if (value1.isArray() && isArrayOfObjects(fieldSchema)) {
         diffs.addAll(handleArray(value1, value2, fieldSchema, specNode, currentPath));
@@ -81,7 +82,21 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<CompareEntry> compareArrays(
+  private Collection<CompareEntry> handleMissing(JsonNode value1, JsonNode value2,
+      JsonNode fieldSchema, JsonNode specNode, String currentPath) {
+    List<CompareEntry> diffs = new ArrayList<>();
+
+    if (value2.isMissingNode()) {
+      diffs.add(CompareEntry.warning(String.format(
+          "Поле '%s': в первом JSON '%s' во втором JSON отсутствует",
+          currentPath, value1
+      )));
+    }
+
+    return diffs;
+  }
+
+  private Collection<CompareEntry> compareArrays(
       JsonNode array1,
       JsonNode array2,
       JsonNode itemSchema,
@@ -142,7 +157,7 @@ public class ComparatorService {
     return groupedMap;
   }
 
-  private List<CompareEntry> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
+  private Collection<CompareEntry> handleObject(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String currentPath) {
     List<CompareEntry> diffs = new ArrayList<>();
     String refSchemaName = fieldSchema.path("$ref").asText("");
     if (!refSchemaName.isEmpty()) {
@@ -157,7 +172,7 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<CompareEntry> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
+  private Collection<CompareEntry> handleArray(JsonNode array1, JsonNode array2, JsonNode fieldSchema, JsonNode specNode, String path) {
     List<CompareEntry> diffs = new ArrayList<>();
     JsonNode itemsSchema = fieldSchema.path("items");
     if (itemsSchema != null && itemsSchema.path("$ref") != null) {
@@ -171,7 +186,7 @@ public class ComparatorService {
     return diffs;
   }
 
-  private List<CompareEntry> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
+  private Collection<CompareEntry> handleValue(JsonNode value1, JsonNode value2, JsonNode fieldSchema, JsonNode specNode, String path) {
     List<CompareEntry> diffs = new ArrayList<>();
     // Простое поле или массив не объектов
 
