@@ -1,7 +1,5 @@
 package ru.rabis.services;
 
-import static ru.rabis.utils.Utils.isValidUuid;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import ru.rabis.model.CompareConfiguration;
 import ru.rabis.model.EntryKeyComposite;

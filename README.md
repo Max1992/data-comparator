@@ -1,35 +1,27 @@
 # smc-data-loader
-Проект платформы SmartCalculator реализующий сравнение расчетов приложения СмартКалькулятор:
+Проект платформы SmartCalculator реализующий сравнение объектов приложения СмартКалькулятор:
 
-Используют openapi для сравнения.
+Во время сравнения используется swagger definition предоставляемых сервисом data-provider. При старте проекта сервис получает последнюю версию схемы и использует ее (если схема измениться необходимо перезапустить сервис).
 
-```json
-{
-  "source" : "695b4051-7e48-4dfd-b5a8-1317444392ed",
-  "target" : "aadd8704-e8aa-4b95-b14c-6df422cf14f9",
-  "configuration": {}
-}
+Параметры запуска
+
+```curl
+curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator/file' \
+--form 'configuration="{
+  \"ignore\": [\"stringSequenceSearch\",\"stringSequence\",\"titlePIR\",\"sequence\", \"typePir\",\"errorCalculationElement\",\"executorIsWork\",\"isEqualsCorrectiveCoeff\",\"correctiveCoeffTemp\",\"isD647ModifiedCorrectiveCoeff\",\"stateCalc\",\"pirIsAvailable\",\"isAgreedPir\",\"headGppRole\",\"dontDelegateToExpertsGpp\",\"typeOfSubWork\",\"baseLaborCost\"],
+  \"readonly\": false,
+  \"date\": false,
+  \"uuid\": false,
+  \"arrayKey\": [\"_name\", \"objectUuid\"]
+}";type=application/json' \
+--form 'source=@"file1.json"' \
+--form 'target=@"file2.json"'
 ```
- name          | description            | example                                                                   
----------------|------------------------|---------------------------------------------------------------------------|
- source        | Источник для сравнения | uuid или json  |
- target        | Цель сравнения         | uuid или json  |
- configuration | Конфигурация           | Пример ниже                                                               |
 
 # Пример использования
 
 
-
 Раздел конфигурации
-```json
-"configuration": {
-    "ignore": ["stringSequenceSearch","stringSequence","titlePIR","sequence", "typePir"],
-    "readonly": false,
-    "date": false,
-    "uuid": false,
-    "arrayKey": ["_name", "objectUuid"]
-}
-```
 
 name | description                                        | example                 
 --- |----------------------------------------------------|-------------------------|
@@ -41,7 +33,7 @@ arrayKey | Ключи для нахождение элемента в масси
 
 # Пример 
 
-```json
+```curl
 curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -74,7 +66,7 @@ curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator' \
 
 # Либо можно указать два файла с настройками
 
-```json
+```curl
 curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator/file' \
 --form 'configuration="{
   \"ignore\": [\"stringSequenceSearch\",\"stringSequence\",\"titlePIR\",\"sequence\", \"typePir\"],
@@ -89,7 +81,7 @@ curl --location 'http://localhost:8096/api/v1/Calculator/parentBpmnCalculator/fi
 
 Можно указать для проверки любой тип, например
 
-```json
+```curl
 curl --location 'http://localhost:8096/api/v1/Calculator/kiiIgfi/file' \
 --form 'configuration="{
   \"ignore\": [\"stringSequenceSearch\",\"stringSequence\",\"titlePIR\",\"sequence\", \"typePir\"],

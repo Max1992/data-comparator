@@ -87,10 +87,8 @@ public class ComparatorService {
     List<CompareEntry> diffs = new ArrayList<>();
 
     if (value2.isMissingNode()) {
-      diffs.add(CompareEntry.warning(String.format(
-          "Поле '%s': в первом JSON '%s' во втором JSON отсутствует",
-          currentPath, value1
-      )));
+      diffs.add(CompareEntry.warning("Поле '%s': в первом JSON '%s' во втором JSON отсутствует",
+          currentPath, value1));
     }
 
     return diffs;
@@ -107,10 +105,9 @@ public class ComparatorService {
     int size1 = array1.size();
     int size2 = array2.size();
     if (size1 != size2) {
-      diffs.add(CompareEntry.error(String.format(
-          "Массив '%s': разное количество элементов (%d и %d)",
+      diffs.add(CompareEntry.error("Массив '%s': разное количество элементов (%d и %d)",
           path, size1, size2
-      )));
+      ));
       return diffs;
     }
 
@@ -119,10 +116,8 @@ public class ComparatorService {
 
     for (EntryKey item1Key : groupedMap1.keySet()) {
       if (!groupedMap2.containsKey(item1Key)) {
-        diffs.add(CompareEntry.error(
-            String.format("Не найдено значение '%s' '%s'",
-                item1Key, path))
-        );
+        diffs.add(CompareEntry.error("Не найдено значение '%s' '%s'",
+                item1Key, path));
         continue;
       }
 
@@ -131,9 +126,8 @@ public class ComparatorService {
 
       int size = item1.size();
       if (size != 1) {
-        diffs.add(CompareEntry.warning(
-            String.format("Найдено более одного значение '%s' (%d) '%s'",
-                item1Key, size, path))
+        diffs.add(CompareEntry.warning("Найдено более одного значение '%s' (%d) '%s'",
+                item1Key, size, path)
         );
 
         continue;
@@ -196,10 +190,8 @@ public class ComparatorService {
     }
 
     if (!value1.equals(value2)) {
-      diffs.add(CompareEntry.error(String.format(
-          "Поле '%s': в первом JSON '%s', во втором '%s'",
-          path, value1, value2
-      )));
+      diffs.add(CompareEntry.error("Поле '%s': в первом JSON '%s', во втором '%s'",
+          path, value1, value2));
     }
     return diffs;
   }
